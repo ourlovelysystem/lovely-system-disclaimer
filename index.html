@@ -1605,10 +1605,10 @@ async function processingTransition(
   ) {
 
     await wait(
-      180
+      420
       +
       Math.random()
-      * 260
+      * 480
     );
 
 
@@ -1636,43 +1636,47 @@ async function processingTransition(
 
 
   paragraph(
-    "New terms and conditions have been discovered.",
+    "Bad news.",
     "question"
   );
 
-
   paragraph(
-    "The good news is that you do not have to reacknowledge terms you have already acknowledged."
+    "Our Lovely System has discovered that our Terms and Conditions have changed."
   );
 
+  paragraph(
+    "Good news!",
+    "question"
+  );
+
+  paragraph(
+    "You do not need to review anything you've already agreed to."
+  );
 
   if (
     firstProcessingCycle
   ) {
-
     paragraph(
-      "There are 3 new terms and conditions requiring your attention."
+      "We have identified 3 new Terms and Conditions requiring your attention."
     );
-
 
     firstProcessingCycle =
       false;
-
   } else {
-
     paragraph(
-      "There are just a few new terms and conditions requiring your attention."
+      "We have identified just a few new Terms and Conditions requiring your attention."
     );
-
   }
 
+  const controls =
+    buttonsContainer();
 
-  await wait(
-    1400
+  controls.appendChild(
+    makeButton(
+      "Continue",
+      loadQuestion
+    )
   );
-
-
-  await loadQuestion();
 
 }
 
@@ -1730,6 +1734,9 @@ async function showProgram(
       entries
     );
 
+    renderAgreementReport(
+      result
+    );
 
     renderNewTermForm();
 
@@ -1951,6 +1958,273 @@ function renderLeaderboard(
 
 }
 
+
+
+function renderAgreementReport(
+  result
+) {
+  const questions =
+    result.questions || [];
+
+  const events =
+    result.events || [];
+
+  const questionMap =
+    new Map(
+      questions.map(
+        question => [
+          question.question_id,
+          question
+        ]
+      )
+    );
+
+  const grouped =
+    new Map();
+
+  for (
+    const event
+    of events
+  ) {
+    if (
+      event.record_type !== "response"
+      ||
+      event.classification !== "affirmative"
+      ||
+      !event.question_id
+    ) {
+      continue;
+    }
+
+    const question =
+      questionMap.get(
+        event.question_id
+      );
+
+    if (!question) {
+      continue;
+    }
+
+    if (
+      !grouped.has(
+        event.question_id
+      )
+    ) {
+      grouped.set(
+        event.question_id,
+        {
+          question,
+          events: []
+        }
+      );
+    }
+
+    grouped
+      .get(
+        event.question_id
+      )
+      .events
+      .push(
+        event
+      );
+  }
+
+  const ranked =
+    Array.from(
+      grouped.values()
+    )
+      .sort(
+        (a, b) =>
+          Number(
+            b.question.observed_absurdity ?? 0
+          )
+          -
+          Number(
+            a.question.observed_absurdity ?? 0
+          )
+      )
+      .slice(
+        0,
+        10
+      );
+
+  const panel =
+    document.createElement(
+      "section"
+    );
+
+  panel.className =
+    "form-panel";
+
+  const heading =
+    document.createElement(
+      "h2"
+    );
+
+  heading.textContent =
+    "What Our Customers Are Agreeing To";
+
+  panel.appendChild(
+    heading
+  );
+
+  const intro =
+    document.createElement(
+      "p"
+    );
+
+  intro.textContent =
+    "The craziest Terms and Conditions our customers have agreed to, ranked by observed absurdity.";
+
+  panel.appendChild(
+    intro
+  );
+
+  if (!ranked.length) {
+    const empty =
+      document.createElement(
+        "p"
+      );
+
+    empty.textContent =
+      "Nobody has agreed to anything sufficiently interesting yet.";
+
+    panel.appendChild(
+      empty
+    );
+
+    content.appendChild(
+      panel
+    );
+
+    return;
+  }
+
+  ranked.forEach(
+    (item, index) => {
+      const card =
+        document.createElement(
+          "div"
+        );
+
+      card.style.marginTop =
+        "1.75rem";
+      card.style.paddingTop =
+        "1.25rem";
+      card.style.borderTop =
+        "1px solid #aaa";
+
+      const title =
+        document.createElement(
+          "p"
+        );
+
+      title.className =
+        "question";
+      title.style.margin =
+        "0 0 0.5rem";
+      title.textContent =
+        `${index + 1}. ${item.question.text}`;
+
+      card.appendChild(
+        title
+      );
+
+      const score =
+        document.createElement(
+          "p"
+        );
+
+      score.textContent =
+        `Observed absurdity: ${
+          Number(
+            item.question.observed_absurdity ?? 0
+          ).toFixed(1)
+        }`;
+
+      card.appendChild(
+        score
+      );
+
+      const recentLabel =
+        document.createElement(
+          "p"
+        );
+
+      recentLabel.textContent =
+        "Most recently agreed to by:";
+
+      card.appendChild(
+        recentLabel
+      );
+
+      const recent =
+        item.events
+          .slice()
+          .sort(
+            (a, b) =>
+              String(
+                b.created_at || ""
+              ).localeCompare(
+                String(
+                  a.created_at || ""
+                )
+              )
+          )
+          .slice(
+            0,
+            3
+          );
+
+      const list =
+        document.createElement(
+          "ul"
+        );
+
+      for (
+        const event
+        of recent
+      ) {
+        const li =
+          document.createElement(
+            "li"
+          );
+
+        const when =
+          event.created_at
+            ? new Date(
+                event.created_at
+              ).toLocaleString()
+            : "";
+
+        li.textContent =
+          `${
+            event.declared_name || "Unknown"
+          }${
+            when
+              ? ` — ${when}`
+              : ""
+          }`;
+
+        list.appendChild(
+          li
+        );
+      }
+
+      card.appendChild(
+        list
+      );
+
+      panel.appendChild(
+        card
+      );
+    }
+  );
+
+  content.appendChild(
+    panel
+  );
+}
 
 function renderNewTermForm() {
 
