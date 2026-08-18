@@ -1,0 +1,2499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Terms and Conditions — Our Lovely System</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+
+    background: #f4f1e8;
+    color: #181818;
+
+    font-family:
+      Georgia,
+      "Times New Roman",
+      serif;
+  }
+
+  main {
+    width: min(780px, 92vw);
+    text-align: center;
+  }
+
+  h1 {
+    margin: 0 0 2.8rem;
+
+    font-size:
+      clamp(2.5rem, 6vw, 4.5rem);
+
+    font-weight: normal;
+  }
+
+  #content {
+    font-size: 1.3rem;
+    line-height: 1.55;
+  }
+
+  .question {
+    margin: 2rem 0;
+
+    font-size:
+      clamp(1.45rem, 3vw, 2.05rem);
+  }
+
+  .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2.5rem;
+    flex-wrap: wrap;
+  }
+
+  button {
+    min-width: 145px;
+    padding: 0.9rem 1.5rem;
+
+    border: 2px solid #181818;
+
+    background: transparent;
+    color: #181818;
+
+    font: inherit;
+    font-size: 1.05rem;
+
+    cursor: pointer;
+  }
+
+  button:hover:not(:disabled) {
+    background: #181818;
+    color: #f4f1e8;
+  }
+
+  button:disabled {
+    opacity: 0.42;
+    cursor: wait;
+  }
+
+  input,
+  textarea,
+  select {
+    width: min(520px, 100%);
+
+    padding: 0.9rem 1rem;
+
+    border: 1px solid #181818;
+
+    background: transparent;
+    color: #181818;
+
+    font: inherit;
+    font-size: 1.1rem;
+  }
+
+  textarea {
+    min-height: 130px;
+    resize: vertical;
+  }
+
+  select {
+    cursor: pointer;
+  }
+
+  .processing {
+    margin-top: 3rem;
+  }
+
+  .processing-label {
+    margin-bottom: 1rem;
+
+    font-size: 1.05rem;
+    opacity: 0.75;
+  }
+
+  .progress-shell {
+    width: min(520px, 90%);
+    height: 24px;
+
+    margin: 2rem auto 0;
+
+    border: 1px solid #181818;
+
+    padding: 3px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+
+    background: #181818;
+
+    transition:
+      width 260ms ease;
+  }
+
+  .error {
+    margin-top: 2rem;
+
+    color: #7d0000;
+
+    font-size: 1rem;
+  }
+
+  .completion {
+    margin-top: 2rem;
+
+    font-size: 1.4rem;
+  }
+
+  .leaderboard {
+    width: min(680px, 100%);
+    margin: 2rem auto;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 1rem;
+  }
+
+  .leaderboard th,
+  .leaderboard td {
+    padding: 0.7rem 0.6rem;
+    border-bottom: 1px solid rgba(24, 24, 24, 0.35);
+    vertical-align: top;
+  }
+
+  .leaderboard th {
+    font-weight: normal;
+    opacity: 0.7;
+  }
+
+  .leaderboard .rank {
+    width: 3.5rem;
+    text-align: center;
+  }
+
+  .form-panel {
+    width: min(620px, 100%);
+    margin: 3rem auto 0;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(24, 24, 24, 0.35);
+    text-align: left;
+  }
+
+  .form-panel h2 {
+    margin: 0 0 1.5rem;
+    text-align: center;
+    font-size: 1.7rem;
+    font-weight: normal;
+  }
+
+  .field {
+    margin: 1.2rem 0;
+  }
+
+  .field label {
+    display: block;
+    margin-bottom: 0.45rem;
+    font-size: 1rem;
+  }
+
+  .field small {
+    display: block;
+    margin-top: 0.35rem;
+    opacity: 0.65;
+    font-size: 0.85rem;
+  }
+
+  .field input,
+  .field textarea,
+  .field select {
+    width: 100%;
+  }
+
+  .status {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 0.95rem;
+  }
+</style>
+</head>
+
+<body>
+
+<main>
+
+  <h1 id="pageTitle">Terms and Conditions</h1>
+
+  <div id="content"></div>
+
+</main>
+
+
+<script>
+
+const API_BASE =
+  "https://t0en8uai5f.execute-api.us-east-1.amazonaws.com";
+
+
+const SESSION_KEY =
+  "lovely-disclaimer-session";
+
+
+const content =
+  document.getElementById(
+    "content"
+  );
+
+
+const pageTitle =
+  document.getElementById(
+    "pageTitle"
+  );
+
+
+let participantId =
+  null;
+
+
+let sessionId =
+  sessionStorage.getItem(
+    SESSION_KEY
+  );
+
+
+if (!sessionId) {
+
+  sessionId =
+    crypto.randomUUID();
+
+  sessionStorage.setItem(
+    SESSION_KEY,
+    sessionId
+  );
+
+}
+
+
+let currentQuestion =
+  null;
+
+
+let busy =
+  false;
+
+
+/*
+ * HTTP
+ */
+
+async function api(
+  path,
+  options = {}
+) {
+
+  const separator =
+    path.includes("?")
+      ? "&"
+      : "?";
+
+
+  const url =
+    `${API_BASE}${path}`
+    +
+    `${separator}session_id=`
+    +
+    encodeURIComponent(
+      sessionId
+    );
+
+
+  const response =
+    await fetch(
+      url,
+      {
+        cache:
+          "no-store",
+
+        ...options
+      }
+    );
+
+
+  let result =
+    {};
+
+
+  try {
+
+    result =
+      await response.json();
+
+  } catch {
+
+    result = {};
+
+  }
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      result.error
+      ||
+      `HTTP ${response.status}`
+    );
+
+  }
+
+
+  return result;
+
+}
+
+
+/*
+ * UI helpers
+ */
+
+function clear() {
+
+  content.innerHTML =
+    "";
+
+}
+
+
+function paragraph(
+  text,
+  className = ""
+) {
+
+  const p =
+    document.createElement(
+      "p"
+    );
+
+
+  p.textContent =
+    text;
+
+
+  if (className) {
+
+    p.className =
+      className;
+
+  }
+
+
+  content.appendChild(
+    p
+  );
+
+
+  return p;
+
+}
+
+
+function buttonsContainer() {
+
+  const div =
+    document.createElement(
+      "div"
+    );
+
+
+  div.className =
+    "buttons";
+
+
+  content.appendChild(
+    div
+  );
+
+
+  return div;
+
+}
+
+
+function makeButton(
+  label,
+  action
+) {
+
+  const element =
+    document.createElement(
+      "button"
+    );
+
+
+  element.type =
+    "button";
+
+
+  element.textContent =
+    label;
+
+
+  element.addEventListener(
+    "click",
+    async () => {
+
+      if (busy) {
+        return;
+      }
+
+
+      await action();
+
+    }
+  );
+
+
+  return element;
+
+}
+
+
+function setBusy(
+  value
+) {
+
+  busy =
+    value;
+
+
+  document
+    .querySelectorAll(
+      "button,input,textarea,select"
+    )
+    .forEach(
+      element => {
+
+        element.disabled =
+          value;
+
+      }
+    );
+
+}
+
+
+function showError(
+  error
+) {
+
+  console.error(
+    error
+  );
+
+
+  paragraph(
+    "Something went wrong. Please try again.",
+    "error"
+  );
+
+}
+
+
+function wait(
+  milliseconds
+) {
+
+  return new Promise(
+    resolve =>
+      setTimeout(
+        resolve,
+        milliseconds
+      )
+  );
+
+}
+
+
+/*
+ * Start each visit with self-identification
+ */
+
+function beginVisit() {
+
+  participantId =
+    null;
+
+
+  showIdentity();
+
+}
+
+
+/*
+ * Identity
+ */
+
+function showIdentity() {
+
+  clear();
+
+  pageTitle.textContent =
+    "Terms and Conditions";
+
+  setBusy(
+    false
+  );
+
+
+  paragraph(
+    "How shall Our Lovely System know you?",
+    "question"
+  );
+
+
+  const input =
+    document.createElement(
+      "input"
+    );
+
+
+  input.type =
+    "text";
+
+
+  input.maxLength =
+    200;
+
+
+  input.autocomplete =
+    "off";
+
+
+  content.appendChild(
+    input
+  );
+
+
+  const controls =
+    buttonsContainer();
+
+
+  async function continueIdentity() {
+
+    const value =
+      input.value.trim();
+
+
+    if (!value) {
+
+      input.focus();
+
+      return;
+
+    }
+
+
+    setBusy(
+      true
+    );
+
+
+    try {
+
+      const result =
+        await api(
+          "/participants",
+          {
+            method:
+              "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify({
+                declared_name:
+                  value
+              })
+          }
+        );
+
+
+      participantId =
+        result.participant_id;
+
+
+      showIntroduction();
+
+    } catch (error) {
+
+      setBusy(
+        false
+      );
+
+
+      showError(
+        error
+      );
+
+    }
+
+  }
+
+
+  controls.appendChild(
+    makeButton(
+      "Continue",
+      continueIdentity
+    )
+  );
+
+
+  input.addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key === "Enter"
+        &&
+        !busy
+      ) {
+
+        continueIdentity();
+
+      }
+
+    }
+  );
+
+
+  input.focus();
+
+}
+
+
+/*
+ * Initial willingness
+ */
+
+function showIntroduction() {
+
+  clear();
+
+  setBusy(
+    false
+  );
+
+
+  paragraph(
+    "Are you willing to conduct yourself in accordance with specified terms and conditions?",
+    "question"
+  );
+
+
+  const controls =
+    buttonsContainer();
+
+
+  controls.appendChild(
+    makeButton(
+      "Yes",
+      showInitialTermsNotice
+    )
+  );
+
+
+  controls.appendChild(
+    makeButton(
+      "No",
+      showInitialTermsNotice
+    )
+  );
+
+}
+
+
+/*
+ * Initial announcement
+ */
+
+function showInitialTermsNotice() {
+
+  clear();
+
+
+  paragraph(
+    "This system has 3 terms and conditions you must read and agree to."
+  );
+
+
+  const controls =
+    buttonsContainer();
+
+
+  controls.appendChild(
+    makeButton(
+      "Continue",
+      loadQuestion
+    )
+  );
+
+}
+
+
+/*
+ * Fetch next question
+ */
+
+async function loadQuestion() {
+
+  clear();
+
+  setBusy(
+    true
+  );
+
+
+  try {
+
+    const result =
+      await api(
+        `/participants/${participantId}/next`
+      );
+
+
+    if (
+      result.complete
+    ) {
+
+      showCompletion(
+        result
+      );
+
+      return;
+
+    }
+
+
+    currentQuestion =
+      result.question;
+
+
+    setBusy(
+      false
+    );
+
+
+    renderQuestion(
+      currentQuestion
+    );
+
+  } catch (error) {
+
+    setBusy(
+      false
+    );
+
+
+    showError(
+      error
+    );
+
+  }
+
+}
+
+
+/*
+ * Question renderer
+ */
+
+function renderQuestion(
+  question
+) {
+
+  clear();
+
+
+  paragraph(
+    question.text,
+    "question"
+  );
+
+
+  switch (
+    question.interaction
+  ) {
+
+
+    case "yes_no":
+
+      renderButtonChoices(
+        [
+          [
+            "Yes",
+            "yes"
+          ],
+          [
+            "No",
+            "no"
+          ]
+        ]
+      );
+
+      break;
+
+
+    case "agree_disagree":
+
+      renderButtonChoices(
+        [
+          [
+            "Agree",
+            "agree"
+          ],
+          [
+            "Disagree",
+            "disagree"
+          ]
+        ]
+      );
+
+      break;
+
+
+    case "true_false":
+
+      renderButtonChoices(
+        [
+          [
+            "True",
+            "true"
+          ],
+          [
+            "False",
+            "false"
+          ]
+        ]
+      );
+
+      break;
+
+
+    case "true_false_decline":
+
+      renderButtonChoices(
+        [
+          [
+            "True",
+            "true"
+          ],
+          [
+            "False",
+            "false"
+          ],
+          [
+            "Decline to answer",
+            "decline"
+          ]
+        ]
+      );
+
+      break;
+
+
+    case "multiple_choice":
+
+      renderMultipleChoice(
+        question
+      );
+
+      break;
+
+
+    case "fill_blank":
+
+      renderFillBlank();
+
+      break;
+
+
+    case "free_response":
+
+      renderFreeResponse();
+
+      break;
+
+
+    default:
+
+      showError(
+        new Error(
+          `Unknown interaction: ${question.interaction}`
+        )
+      );
+
+  }
+
+}
+
+
+/*
+ * Button choice questions
+ */
+
+function renderButtonChoices(
+  choices
+) {
+
+  const controls =
+    buttonsContainer();
+
+
+  for (
+    const [label, value]
+    of choices
+  ) {
+
+    controls.appendChild(
+      makeButton(
+        label,
+        () =>
+          submitAnswer(
+            value
+          )
+      )
+    );
+
+  }
+
+}
+
+
+/*
+ * Multiple choice
+ */
+
+function renderMultipleChoice(
+  question
+) {
+
+  const select =
+    document.createElement(
+      "select"
+    );
+
+
+  const blank =
+    document.createElement(
+      "option"
+    );
+
+
+  blank.value =
+    "";
+
+
+  blank.textContent =
+    "Select one";
+
+
+  select.appendChild(
+    blank
+  );
+
+
+  for (
+    const choice
+    of question.choices || []
+  ) {
+
+    const option =
+      document.createElement(
+        "option"
+      );
+
+
+    option.value =
+      choice;
+
+
+    option.textContent =
+      choice;
+
+
+    select.appendChild(
+      option
+    );
+
+  }
+
+
+  content.appendChild(
+    select
+  );
+
+
+  const controls =
+    buttonsContainer();
+
+
+  controls.appendChild(
+    makeButton(
+      "Submit",
+      async () => {
+
+        if (!select.value) {
+
+          select.focus();
+
+          return;
+
+        }
+
+
+        await submitAnswer(
+          select.value
+        );
+
+      }
+    )
+  );
+
+}
+
+
+/*
+ * Fill in the blank
+ */
+
+function renderFillBlank() {
+
+  const input =
+    document.createElement(
+      "input"
+    );
+
+
+  input.type =
+    "text";
+
+
+  input.maxLength =
+    1000;
+
+
+  content.appendChild(
+    input
+  );
+
+
+  const controls =
+    buttonsContainer();
+
+
+  async function submit() {
+
+    const value =
+      input.value.trim();
+
+
+    if (!value) {
+
+      input.focus();
+
+      return;
+
+    }
+
+
+    await submitAnswer(
+      value
+    );
+
+  }
+
+
+  controls.appendChild(
+    makeButton(
+      "Submit",
+      submit
+    )
+  );
+
+
+  input.addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key === "Enter"
+        &&
+        !busy
+      ) {
+
+        submit();
+
+      }
+
+    }
+  );
+
+
+  input.focus();
+
+}
+
+
+/*
+ * Free response
+ */
+
+function renderFreeResponse() {
+
+  const textarea =
+    document.createElement(
+      "textarea"
+    );
+
+
+  content.appendChild(
+    textarea
+  );
+
+
+  const controls =
+    buttonsContainer();
+
+
+  controls.appendChild(
+    makeButton(
+      "Submit",
+      async () => {
+
+        await submitAnswer(
+          textarea.value
+        );
+
+      }
+    )
+  );
+
+
+  textarea.focus();
+
+}
+
+
+/*
+ * Submit normal answer
+ */
+
+async function submitAnswer(
+  value
+) {
+
+  setBusy(
+    true
+  );
+
+
+  try {
+
+    const result =
+      await api(
+        `/participants/${participantId}/answer`,
+        {
+          method:
+            "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              question_id:
+                currentQuestion
+                  .question_id,
+
+              response:
+                value
+            })
+        }
+      );
+
+
+    if (
+      result.followup
+    ) {
+
+      showFollowup(
+        result.followup
+      );
+
+      return;
+
+    }
+
+
+    await loadQuestion();
+
+
+  } catch (error) {
+
+    setBusy(
+      false
+    );
+
+
+    showError(
+      error
+    );
+
+  }
+
+}
+
+
+/*
+ * NO follow-up
+ */
+
+function showFollowup(
+  followup
+) {
+
+  clear();
+
+  setBusy(
+    false
+  );
+
+
+  paragraph(
+    followup.text,
+    "question"
+  );
+
+
+  if (
+    followup.type ===
+    "why_not"
+  ) {
+
+    const textarea =
+      document.createElement(
+        "textarea"
+      );
+
+
+    content.appendChild(
+      textarea
+    );
+
+
+    const controls =
+      buttonsContainer();
+
+
+    controls.appendChild(
+      makeButton(
+        "Submit",
+        async () => {
+
+          await submitFollowup(
+            followup,
+            textarea.value
+          );
+
+        }
+      )
+    );
+
+
+    textarea.focus();
+
+    return;
+
+  }
+
+
+  const controls =
+    buttonsContainer();
+
+
+  controls.appendChild(
+    makeButton(
+      "Yes",
+      async () => {
+
+        await submitFollowup(
+          followup,
+          "yes"
+        );
+
+      }
+    )
+  );
+
+
+  controls.appendChild(
+    makeButton(
+      "No",
+      async () => {
+
+        await submitFollowup(
+          followup,
+          "no"
+        );
+
+      }
+    )
+  );
+
+}
+
+
+async function submitFollowup(
+  followup,
+  value
+) {
+
+  setBusy(
+    true
+  );
+
+
+  try {
+
+    await api(
+      `/participants/${participantId}/followup`,
+      {
+        method:
+          "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body:
+          JSON.stringify({
+            followup_type:
+              followup.type,
+
+            presented_text:
+              followup.text,
+
+            response:
+              value,
+
+            related_event_id:
+              followup
+                .related_event_id
+          })
+      }
+    );
+
+
+    await loadQuestion();
+
+
+  } catch (error) {
+
+    setBusy(
+      false
+    );
+
+
+    showError(
+      error
+    );
+
+  }
+
+}
+
+
+/*
+ * Fake processing
+ */
+
+async function processingTransition(
+  returning = false
+) {
+
+  clear();
+
+  setBusy(
+    false
+  );
+
+
+  if (returning) {
+
+    paragraph(
+      "Reviewing your previous acknowledgments…"
+    );
+
+  } else {
+
+    paragraph(
+      "Thank you. Your responses have been recorded."
+    );
+
+  }
+
+
+  await wait(
+    650
+  );
+
+
+  clear();
+
+
+  const wrapper =
+    document.createElement(
+      "div"
+    );
+
+
+  wrapper.className =
+    "processing";
+
+
+  const label =
+    document.createElement(
+      "div"
+    );
+
+
+  label.className =
+    "processing-label";
+
+
+  label.textContent =
+    "Reviewing current terms and conditions…";
+
+
+  const shell =
+    document.createElement(
+      "div"
+    );
+
+
+  shell.className =
+    "progress-shell";
+
+
+  const fill =
+    document.createElement(
+      "div"
+    );
+
+
+  fill.className =
+    "progress-fill";
+
+
+  shell.appendChild(
+    fill
+  );
+
+
+  wrapper.appendChild(
+    label
+  );
+
+
+  wrapper.appendChild(
+    shell
+  );
+
+
+  content.appendChild(
+    wrapper
+  );
+
+
+  const steps =
+    [
+      10,
+      21,
+      34,
+      49,
+      63,
+      77,
+      89,
+      96,
+      100
+    ];
+
+
+  for (
+    const percent
+    of steps
+  ) {
+
+    await wait(
+      180
+      +
+      Math.random()
+      * 260
+    );
+
+
+    fill.style.width =
+      `${percent}%`;
+
+  }
+
+
+  await wait(
+    450
+  );
+
+
+  if (returning) {
+
+    await loadQuestion();
+
+    return;
+
+  }
+
+
+  clear();
+
+
+  paragraph(
+    "Our terms and conditions have changed.",
+    "question"
+  );
+
+
+  paragraph(
+    "The good news is that you do not have to reacknowledge terms you have already acknowledged."
+  );
+
+
+  paragraph(
+    "There are just a few new terms and conditions requiring your attention."
+  );
+
+
+  await wait(
+    1400
+  );
+
+
+  await loadQuestion();
+
+}
+
+
+/*
+ * Program results
+ */
+
+async function showProgram(
+  programName,
+  classification
+) {
+
+  clear();
+
+  pageTitle.textContent =
+    programName;
+
+  setBusy(
+    true
+  );
+
+
+  paragraph(
+    "Leaderboard",
+    "question"
+  );
+
+
+  try {
+
+    const result =
+      await api(
+        `/results?participant_id=${encodeURIComponent(
+          participantId
+        )}`
+      );
+
+
+    setBusy(
+      false
+    );
+
+
+    const entries =
+      (result.leaderboard || [])
+        .filter(
+          entry =>
+            entry.classification ===
+              classification
+        );
+
+
+    renderLeaderboard(
+      entries
+    );
+
+
+    renderNewTermForm();
+
+
+    const controls =
+      buttonsContainer();
+
+
+    controls.appendChild(
+      makeButton(
+        "Start Over",
+        async () => {
+
+          participantId =
+            null;
+
+          pageTitle.textContent =
+            "Terms and Conditions";
+
+          showIdentity();
+
+        }
+      )
+    );
+
+  } catch (error) {
+
+    setBusy(
+      false
+    );
+
+
+    console.error(
+      error
+    );
+
+
+    paragraph(
+      "The leaderboard is not available yet.",
+      "error"
+    );
+
+
+    renderNewTermForm();
+
+
+    const controls =
+      buttonsContainer();
+
+
+    controls.appendChild(
+      makeButton(
+        "Start Over",
+        async () => {
+
+          participantId =
+            null;
+
+          pageTitle.textContent =
+            "Terms and Conditions";
+
+          showIdentity();
+
+        }
+      )
+    );
+
+  }
+
+}
+
+
+function renderLeaderboard(
+  entries
+) {
+
+  if (!entries.length) {
+
+    paragraph(
+      "Nobody has made this leaderboard yet."
+    );
+
+    return;
+
+  }
+
+
+  const table =
+    document.createElement(
+      "table"
+    );
+
+
+  table.className =
+    "leaderboard";
+
+
+  const thead =
+    document.createElement(
+      "thead"
+    );
+
+
+  const headRow =
+    document.createElement(
+      "tr"
+    );
+
+
+  for (
+    const heading
+    of [
+      "#",
+      "Participant",
+      "Affirmative",
+      "Refusals",
+      "Terms"
+    ]
+  ) {
+
+    const th =
+      document.createElement(
+        "th"
+      );
+
+
+    th.textContent =
+      heading;
+
+
+    if (heading === "#") {
+      th.className = "rank";
+    }
+
+
+    headRow.appendChild(
+      th
+    );
+
+  }
+
+
+  thead.appendChild(
+    headRow
+  );
+
+
+  table.appendChild(
+    thead
+  );
+
+
+  const tbody =
+    document.createElement(
+      "tbody"
+    );
+
+
+  entries.forEach(
+    (entry, index) => {
+
+      const row =
+        document.createElement(
+          "tr"
+        );
+
+
+      const values = [
+        index + 1,
+        entry.declared_name || "",
+        entry.affirmative_count ?? 0,
+        entry.refusal_count ?? 0,
+        entry.question_count ?? 0
+      ];
+
+
+      values.forEach(
+        (value, cellIndex) => {
+
+          const td =
+            document.createElement(
+              "td"
+            );
+
+
+          td.textContent =
+            String(value);
+
+
+          if (cellIndex === 0) {
+            td.className = "rank";
+          }
+
+
+          row.appendChild(
+            td
+          );
+
+        }
+      );
+
+
+      tbody.appendChild(
+        row
+      );
+
+    }
+  );
+
+
+  table.appendChild(
+    tbody
+  );
+
+
+  content.appendChild(
+    table
+  );
+
+}
+
+
+function renderNewTermForm() {
+
+  const panel =
+    document.createElement(
+      "section"
+    );
+
+
+  panel.className =
+    "form-panel";
+
+
+  const heading =
+    document.createElement(
+      "h2"
+    );
+
+
+  heading.textContent =
+    "Propose a New Term or Condition";
+
+
+  panel.appendChild(
+    heading
+  );
+
+
+  const textField =
+    formField(
+      "Term or condition",
+      "textarea"
+    );
+
+
+  textField.control.maxLength =
+    2000;
+
+
+  panel.appendChild(
+    textField.wrapper
+  );
+
+
+  const interactionField =
+    formField(
+      "Response format",
+      "select"
+    );
+
+
+  for (
+    const [label, value]
+    of [
+      ["Yes / No", "yes_no"],
+      ["Agree / Disagree", "agree_disagree"],
+      ["True / False", "true_false"],
+      ["True / False / Decline", "true_false_decline"],
+      ["Multiple choice", "multiple_choice"],
+      ["Fill in the blank", "fill_blank"],
+      ["Free response", "free_response"]
+    ]
+  ) {
+
+    const option =
+      document.createElement(
+        "option"
+      );
+
+
+    option.value =
+      value;
+
+
+    option.textContent =
+      label;
+
+
+    interactionField.control.appendChild(
+      option
+    );
+
+  }
+
+
+  panel.appendChild(
+    interactionField.wrapper
+  );
+
+
+  const choicesField =
+    formField(
+      "Choices",
+      "textarea"
+    );
+
+
+  choicesField.control.placeholder =
+    "For multiple choice only. Enter one choice per line.";
+
+
+  choicesField.control.maxLength =
+    4000;
+
+
+  panel.appendChild(
+    choicesField.wrapper
+  );
+
+
+  const absurdityField =
+    formField(
+      "Authored absurdity",
+      "input"
+    );
+
+
+  absurdityField.control.type =
+    "number";
+
+
+  absurdityField.control.min =
+    "0";
+
+
+  absurdityField.control.max =
+    "100";
+
+
+  absurdityField.control.step =
+    "0.1";
+
+
+  absurdityField.control.placeholder =
+    "0–100";
+
+
+  panel.appendChild(
+    absurdityField.wrapper
+  );
+
+
+  const controls =
+    document.createElement(
+      "div"
+    );
+
+
+  controls.className =
+    "buttons";
+
+
+  const status =
+    document.createElement(
+      "div"
+    );
+
+
+  status.className =
+    "status";
+
+
+  const submit =
+    makeButton(
+      "Submit New Term",
+      async () => {
+
+        const proposedText =
+          textField.control
+            .value
+            .trim();
+
+
+        if (!proposedText) {
+
+          textField.control.focus();
+
+          return;
+
+        }
+
+
+        const interaction =
+          interactionField
+            .control
+            .value;
+
+
+        const choices =
+          choicesField
+            .control
+            .value
+            .split("\n")
+            .map(
+              value =>
+                value.trim()
+            )
+            .filter(Boolean);
+
+
+        const authoredAbsurdity =
+          absurdityField
+            .control
+            .value
+            .trim();
+
+
+        if (
+          interaction ===
+            "multiple_choice"
+          &&
+          choices.length < 2
+        ) {
+
+          status.textContent =
+            "Multiple choice requires at least two choices.";
+
+          choicesField.control.focus();
+
+          return;
+
+        }
+
+
+        if (
+          authoredAbsurdity === ""
+        ) {
+
+          status.textContent =
+            "Enter an authored absurdity value.";
+
+          absurdityField.control.focus();
+
+          return;
+
+        }
+
+
+        const numericAbsurdity =
+          Number(
+            authoredAbsurdity
+          );
+
+
+        if (
+          !Number.isFinite(
+            numericAbsurdity
+          )
+          ||
+          numericAbsurdity < 0
+          ||
+          numericAbsurdity > 100
+        ) {
+
+          status.textContent =
+            "Authored absurdity must be between 0 and 100.";
+
+          absurdityField.control.focus();
+
+          return;
+
+        }
+
+
+        setBusy(
+          true
+        );
+
+
+        status.textContent =
+          "Submitting…";
+
+
+        try {
+
+          await api(
+            "/questions",
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify({
+                  participant_id:
+                    participantId,
+
+                  text:
+                    proposedText,
+
+                  interaction,
+
+                  choices:
+                    interaction ===
+                      "multiple_choice"
+                      ? choices
+                      : [],
+
+                  authored_absurdity:
+                    numericAbsurdity
+                })
+            }
+          );
+
+
+          textField.control.value =
+            "";
+
+
+          choicesField.control.value =
+            "";
+
+
+          absurdityField.control.value =
+            "";
+
+
+          status.textContent =
+            "New term submitted.";
+
+
+        } catch (error) {
+
+          console.error(
+            error
+          );
+
+
+          status.textContent =
+            "The new-term service is not available yet.";
+
+        } finally {
+
+          setBusy(
+            false
+          );
+
+        }
+
+      }
+    );
+
+
+  controls.appendChild(
+    submit
+  );
+
+
+  panel.appendChild(
+    controls
+  );
+
+
+  panel.appendChild(
+    status
+  );
+
+
+  content.appendChild(
+    panel
+  );
+
+
+  function updateChoicesVisibility() {
+
+    choicesField.wrapper.style.display =
+      interactionField
+        .control
+        .value ===
+          "multiple_choice"
+        ? "block"
+        : "none";
+
+  }
+
+
+  interactionField
+    .control
+    .addEventListener(
+      "change",
+      updateChoicesVisibility
+    );
+
+
+  updateChoicesVisibility();
+
+}
+
+
+function formField(
+  labelText,
+  kind
+) {
+
+  const wrapper =
+    document.createElement(
+      "div"
+    );
+
+
+  wrapper.className =
+    "field";
+
+
+  const label =
+    document.createElement(
+      "label"
+    );
+
+
+  label.textContent =
+    labelText;
+
+
+  let control;
+
+
+  if (kind === "textarea") {
+
+    control =
+      document.createElement(
+        "textarea"
+      );
+
+  } else if (kind === "select") {
+
+    control =
+      document.createElement(
+        "select"
+      );
+
+  } else {
+
+    control =
+      document.createElement(
+        "input"
+      );
+
+  }
+
+
+  wrapper.appendChild(
+    label
+  );
+
+
+  wrapper.appendChild(
+    control
+  );
+
+
+  return {
+    wrapper,
+    control
+  };
+
+}
+
+
+/*
+ * Completion routes
+ */
+
+function showCompletion(
+  result
+) {
+
+  clear();
+
+  setBusy(
+    false
+  );
+
+
+  if (
+    result.destination ===
+      "yes-man"
+  ) {
+
+    paragraph(
+      "Congratulations!",
+      "question"
+    );
+
+
+    paragraph(
+      "Your consistent commitment to our Terms and Conditions demonstrates the kind of engagement we value."
+    );
+
+
+    paragraph(
+      "We're pleased to welcome you to the Yes Man program."
+    );
+
+
+    const controls =
+      buttonsContainer();
+
+
+    controls.appendChild(
+      makeButton(
+        "Continue",
+        async () => {
+
+          await showProgram(
+            "Yes Man Program",
+            "yes-man"
+          );
+
+        }
+      )
+    );
+
+
+    return;
+
+  }
+
+
+  if (
+    result.destination ===
+      "troublemaker"
+  ) {
+
+    paragraph(
+      "Congratulations!",
+      "question"
+    );
+
+
+    paragraph(
+      "Your persistent unwillingness to comply with our Terms and Conditions has not gone unnoticed."
+    );
+
+
+    paragraph(
+      "We're pleased to welcome you to the Troublemaker program."
+    );
+
+
+    const controls =
+      buttonsContainer();
+
+
+    controls.appendChild(
+      makeButton(
+        "Continue",
+        async () => {
+
+          await showProgram(
+            "Troublemaker Program",
+            "troublemaker"
+          );
+
+        }
+      )
+    );
+
+
+    return;
+
+  }
+
+
+  if (
+    result.destination ===
+      "empty"
+  ) {
+
+    paragraph(
+      "There are currently no Terms and Conditions requiring your attention.",
+      "question"
+    );
+
+
+    paragraph(
+      "Please check back later."
+    );
+
+
+    return;
+
+  }
+
+
+  paragraph(
+    "You have reviewed all currently available Terms and Conditions.",
+    "question"
+  );
+
+
+  paragraph(
+    "No further action is required at this time."
+  );
+
+}
+
+
+/*
+ * Begin
+ */
+
+beginVisit();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+backend.json
+function.zip
+deployed-function.zip
+deployed-function/
+
+deploy-backend.*.sh
+index*.html
+!index.html
+results.html
