@@ -297,6 +297,14 @@ let busy =
   false;
 
 
+let answersSinceProcessing =
+  0;
+
+
+let firstProcessingCycle =
+  true;
+
+
 /*
  * HTTP
  */
@@ -1241,6 +1249,10 @@ async function submitAnswer(
       );
 
 
+    answersSinceProcessing +=
+      1;
+
+
     if (
       result.followup
     ) {
@@ -1248,6 +1260,25 @@ async function submitAnswer(
       showFollowup(
         result.followup
       );
+
+      return;
+
+    }
+
+
+    if (
+      answersSinceProcessing
+      >= 3
+    ) {
+
+      answersSinceProcessing =
+        0;
+
+
+      await processingTransition(
+        false
+      );
+
 
       return;
 
@@ -1412,6 +1443,25 @@ async function submitFollowup(
           })
       }
     );
+
+
+    if (
+      answersSinceProcessing
+      >= 3
+    ) {
+
+      answersSinceProcessing =
+        0;
+
+
+      await processingTransition(
+        false
+      );
+
+
+      return;
+
+    }
 
 
     await loadQuestion();
@@ -1586,7 +1636,7 @@ async function processingTransition(
 
 
   paragraph(
-    "Our terms and conditions have changed.",
+    "New terms and conditions have been discovered.",
     "question"
   );
 
@@ -1596,9 +1646,25 @@ async function processingTransition(
   );
 
 
-  paragraph(
-    "There are just a few new terms and conditions requiring your attention."
-  );
+  if (
+    firstProcessingCycle
+  ) {
+
+    paragraph(
+      "There are 3 new terms and conditions requiring your attention."
+    );
+
+
+    firstProcessingCycle =
+      false;
+
+  } else {
+
+    paragraph(
+      "There are just a few new terms and conditions requiring your attention."
+    );
+
+  }
 
 
   await wait(
