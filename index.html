@@ -230,6 +230,26 @@
     text-align: center;
     font-size: 0.95rem;
   }
+
+  .emergency-exit {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 1000;
+    min-width: 0;
+    padding: 0.65rem 0.9rem;
+    border: 2px solid #181818;
+    background: #f4f1e8;
+    color: #181818;
+    font: inherit;
+    font-size: 0.9rem;
+  }
+
+  .emergency-exit:hover {
+    background: #181818;
+    color: #f4f1e8;
+  }
+
 </style>
 </head>
 
@@ -477,6 +497,19 @@ function makeButton(
 
   return element;
 
+}
+
+
+
+function addEmergencyExit() {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "emergency-exit";
+  button.textContent = "Emergency Exit";
+  button.addEventListener("click", () => {
+    window.location.href = "https://progress.ourlovelysystem.org";
+  });
+  document.body.appendChild(button);
 }
 
 
@@ -1667,6 +1700,8 @@ async function processingTransition(
       "We have identified just a few new Terms and Conditions requiring your attention."
     );
   }
+
+  addEmergencyExit();
 
   const controls =
     buttonsContainer();
