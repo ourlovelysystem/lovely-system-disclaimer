@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Our Lovely System Disclaimer — a responsibility divestment machine
+
+Resources:
+  DisclaimerTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: lovely-system-disclaimer
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+
+  DisclaimerApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: ["*"]
+        AllowHeaders: ["content-type"]
+        AllowMethods: [GET, POST, OPTIONS]
+
+  DisclaimerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: lovely-system-disclaimer
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.13
+      Timeout: 10
+      MemorySize: 128
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DisclaimerTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DisclaimerTable
+      Events:
+        Default:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref DisclaimerApi
+            Path: $default
+            Method: ANY
+
+Outputs:
+  ApiUrl:
+    Value: !Sub "https://${DisclaimerApi}.execute-api.${AWS::Region}.amazonaws.com"
